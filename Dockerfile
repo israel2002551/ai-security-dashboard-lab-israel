@@ -1,18 +1,18 @@
-# --- Build Stage ---
-# Use a maintained Maven image with Eclipse Temurin Java 17
+# Stage 1: Build
 FROM maven:3.9.6-eclipse-temurin-17 AS build
 WORKDIR /app
+
+# Copy the specific folder contents (Adjusting for directory structure)
+# We copy everything, then move into the backend-java folder if it exists
 COPY . .
-# Package the app
+RUN if [ -d "backend-java" ]; then mv backend-java/* .; fi
+
+# Now run the build
 RUN mvn clean package -DskipTests
 
-# --- Run Stage ---
-# Use the maintained Eclipse Temurin runtime (Small & Secure)
+# Stage 2: Run
 FROM eclipse-temurin:17-jre-jammy
 WORKDIR /app
-# Copy the built JAR file from the build stage
 COPY --from=build /app/target/*.jar app.jar
-# Tell Render which port we are listening on
 EXPOSE 8080
-# The command to start the app
 ENTRYPOINT ["java","-jar","app.jar"]
